@@ -7,7 +7,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import permissions
 from django.contrib.auth.models import User
-from .serializers import GetUserSerializer, CreateUserSerializer
+from .serializers import GetUserSerializer, CreateUserSerializer, UserTokenObtainPairSerializer
+
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 # Create your views here.
 class UserListApiView(APIView):
@@ -20,6 +22,8 @@ class UserListApiView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UserCreateApiView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request, *args, **kwargs) -> Response:
         data = extract_user_data(request)
         return self.create_user(data)
@@ -40,3 +44,8 @@ def extract_user_data(request):
     }
 
     return data
+
+
+class UserObtainTokenPairView(TokenObtainPairView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = UserTokenObtainPairSerializer
