@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import permissions
 from django.contrib.auth.models import User
-from .serializers import GetUserSerializer, CreateUserSerializer, UserTokenObtainPairSerializer
+from .serializers import UserSerializer, UserTokenObtainPairSerializer
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -17,7 +17,7 @@ class UserListApiView(APIView):
 
     def get(self, request, *args, **kwargs) -> Response:
         notes = User.objects
-        serializer = GetUserSerializer(notes, many=True)
+        serializer = UserSerializer(notes, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -25,27 +25,36 @@ class UserCreateApiView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs) -> Response:
-        data = extract_user_data(request)
-        return self.create_user(data)
+        user = User.objects.filter(username=request.data.get("username"))
+        if not user:
+            user = User.objects.create_user(
+                request.data.get("username"),
+                request.data.get("email"),
+                request.data.get("password")
+            )
+            return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+        else:
+            return Response("User already exists", status=status.HTTP_201_CREATED)
 
-    def create_user(self, data):
-        serializer = CreateUserSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-def extract_user_data(request):
-    data = {
-        'username': request.data.get('username'),
-        'email': request.data.get('email'),
-        'password': request.data.get('password')
-    }
-
-    return data
 
 
 class UserObtainTokenPairView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = UserTokenObtainPairSerializer
+
+
+class UserProfileApiView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = User.objects.get(id=request.user.id)
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        user = User.objects.get(id=request.user.id)
+        user.delete()
+        
+        return Response(
+            {"res": "Object deleted!"},
+            status=status.HTTP_200_OK
+        )
