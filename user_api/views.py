@@ -21,6 +21,7 @@ class UserListApiView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class UserCreateApiView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -34,8 +35,10 @@ class UserCreateApiView(APIView):
             )
             return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
         else:
-            return Response("User already exists", status=status.HTTP_201_CREATED)
-
+            return Response(
+                {"detail": "User already exists!"},
+                status=status.HTTP_409_CONFLICT
+            )
 
 
 class UserObtainTokenPairView(TokenObtainPairView):
