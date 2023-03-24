@@ -31,7 +31,7 @@ class UserApiTestCase(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
 
-    def test_register_same_username(self):
+    def test_fail_register_same_username(self):
         new_user = {
             "username": "user1",
             "email": "user3@gmail.com",
