@@ -7,8 +7,7 @@ import json
 # Create your tests here.
 class UserApiTestCase(TestCase):
     def setUp(self):
-        User.objects.create_superuser("admin", "admin@gmail.com", "admin")
-        User.objects.create_user("user1", "user1@gmail.com", "user1")
+        self.user = User.objects.create_user("user1", "user1@gmail.com", "user1")
 
         user = {"username": "user1", "password": "user1"}
         client = Client()
@@ -53,24 +52,33 @@ class UserApiTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
 
-    def update_profile(self):
+    def test_update_profile(self):
         update_user = { "username": "updatedUser" }
 
-        response = Client().put("/users/api/profile", update_user, **self.auth_headers)
-        note = UserDetailsSerializer(User.objects.get(id=response.data['id'])).data
+        response = Client().put("/users/api/profile", update_user, **self.auth_headers, content_type="application/json")
+        user = UserDetailsSerializer(User.objects.get(id=self.user.id)).data
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(update_user["username"], note["username"])
+        self.assertEqual(update_user["username"], user["username"])
 
-    def update_profile_many(self):
+    def test_update_profile_many(self):
         update_user = { "username": "updatedUser", "email": "email@gmail.com" }
 
-        response = Client().put("/users/api/profile", update_user, **self.auth_headers)
-        note = UserDetailsSerializer(User.objects.get(id=response.data['id'])).data
+        response = Client().put("/users/api/profile", update_user, **self.auth_headers, content_type="application/json")
+        user = UserDetailsSerializer(User.objects.get(id=self.user.id)).data
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(update_user["username"], note["username"])
-        self.assertEqual(update_user["email"], note["email"])
+        self.assertEqual(update_user["username"], user["username"])
+        self.assertEqual(update_user["email"], user["email"])
+
+    def test_update_profile_password(self):
+        update_user = { "password": "password123" }
+
+        response = Client().put("/users/api/profile", update_user, **self.auth_headers, content_type="application/json")
+        user = User.objects.get(id=self.user.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(user.check_password(update_user["password"]), True)
 
     def test_delete_profile(self):
         expected_content = { "res": "Object deleted!" }
