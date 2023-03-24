@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.test import Client
 from django.contrib.auth.models import User
+from .serializers import UserDetailsSerializer
 import json
 
 # Create your tests here.
@@ -51,6 +52,25 @@ class UserApiTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
+
+    def update_profile(self):
+        update_user = { "username": "updatedUser" }
+
+        response = Client().put("/users/api/profile", update_user, **self.auth_headers)
+        note = UserDetailsSerializer(User.objects.get(id=response.data['id'])).data
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(update_user["username"], note["username"])
+
+    def update_profile_many(self):
+        update_user = { "username": "updatedUser", "email": "email@gmail.com" }
+
+        response = Client().put("/users/api/profile", update_user, **self.auth_headers)
+        note = UserDetailsSerializer(User.objects.get(id=response.data['id'])).data
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(update_user["username"], note["username"])
+        self.assertEqual(update_user["email"], note["email"])
 
     def test_delete_profile(self):
         expected_content = { "res": "Object deleted!" }

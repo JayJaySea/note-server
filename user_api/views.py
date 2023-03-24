@@ -48,10 +48,37 @@ class UserObtainTokenPairView(TokenObtainPairView):
 
 class UserProfileApiView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    allowed_update = [ "username", "email", "password" ]
 
     def get(self, request, *args, **kwargs):
         user = User.objects.get(id=request.user.id)
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        user = User.objects.filter(username=request.data.get("username"))
+        if user:
+            return Response(
+                {"detail": "User already exists!"},
+                status=status.HTTP_409_CONFLICT
+            )
+
+        user = User.objects.get(id=request.user.id)
+
+        for key in request.data.keys():
+            if key in user and key in self.allowed_update:
+                if key == "password":
+                    user.set_password(request.data[key])
+                else:
+                    user[key] = request.data[key]
+
+        return self.update_user(user)
+
+    def update_user(self, data):
+        serializer = UserSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
         user = User.objects.get(id=request.user.id)

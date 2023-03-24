@@ -7,6 +7,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["username", "email"]
 
+class UserDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "email", "password"]
 
 class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
