@@ -44,12 +44,20 @@ class UserApiTestCase(TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
 
-    def test_profile(self):
+    def test_get_profile(self):
         expected_content = { "username": "user1", "email": "user1@gmail.com" }
 
         response = Client().get("/users/api/profile", **self.auth_headers)
 
         self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
+
+    def test_fail_get_profile_unauthorized(self):
+        expected_content = {'detail': 'Authentication credentials were not provided.'}
+
+        response = Client().get("/users/api/profile")
+
+        self.assertEqual(response.status_code, 401)
         self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
 
     def test_update_profile(self):
@@ -60,6 +68,15 @@ class UserApiTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(update_user["username"], user["username"])
+
+    def test_fail_update_profile_unauthorized(self):
+        update_user = { "username": "updatedUser" }
+        expected_content = {'detail': 'Authentication credentials were not provided.'}
+
+        response = Client().put("/users/api/profile", update_user, content_type="application/json")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
 
     def test_update_profile_many(self):
         update_user = { "username": "updatedUser", "email": "email@gmail.com" }
@@ -86,4 +103,12 @@ class UserApiTestCase(TestCase):
         response = Client().delete("/users/api/profile", **self.auth_headers)
 
         self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
+
+    def test_fail_delete_profile_unauthorized(self):
+        expected_content = {'detail': 'Authentication credentials were not provided.'}
+
+        response = Client().delete("/users/api/profile")
+
+        self.assertEqual(response.status_code, 401)
         self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
