@@ -41,6 +41,7 @@ def extract_note_data(request):
 
 class NoteDetailApiView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    allowed_update = [ "text", "priority" ]
 
     def get(self, request, note_id, *args, **kwargs):
         note = self.get_note(note_id, request.user.id)
@@ -59,18 +60,21 @@ class NoteDetailApiView(APIView):
             return None
 
     def put(self, request, note_id, *args, **kwargs):
-        note = self.get_note(note_id, request.user.id)
+        note = NoteSerializer(self.get_note(note_id, request.user.id)).data
         if not note:
             return Response(
                 {"res": "Object with that id does not exists"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        data = extract_note_data(request)
-        return self.update_note(note, data)
+        for key in request.data.keys():
+            if key in note and key in self.allowed_update:
+                note[key] = request.data[key]
 
-    def update_note(self, note, data):
-        serializer = NoteSerializer(instance = note, data=data, partial = True)
+        return self.update_note(note)
+
+    def update_note(self, data):
+        serializer = NoteSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)

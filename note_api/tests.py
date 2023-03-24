@@ -12,6 +12,9 @@ class NoteApiTestCase(TestCase):
         note = Note(text="abcd", priority=10, user=self.user)
         note.save()
 
+        note = Note(text="for delete", priority=20, user=self.user)
+        note.save()
+
         user = {"username": "user1", "password": "user1"}
         client = Client()
 
@@ -65,13 +68,48 @@ class NoteApiTestCase(TestCase):
         self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
 
     def test_update(self):
-        pass
+        update_note = { 'text': "new text" }
+
+        response = Client().put("/notes/api/1", update_note, **self.auth_headers, content_type="application/json")
+        note = NoteSerializer(Note.objects.get(id=response.data['id'])).data
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(note["text"], update_note["text"])
+        self.assertJSONEqual(str(response.content, encoding="utf8"), note)
+
+    def test_update_many(self):
+        update_note = { 'text': "new text", 'priority': 200 }
+
+        response = Client().put("/notes/api/1", update_note, **self.auth_headers, content_type="application/json")
+        note = NoteSerializer(Note.objects.get(id=response.data['id'])).data
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(note["text"], update_note["text"])
+        self.assertEqual(note["priority"], update_note["priority"])
+        self.assertJSONEqual(str(response.content, encoding="utf8"), note)
+
+    def test_update_unallowed(self):
+        update_note = { 'user': 15, 'timestamp': "10" }
+
+        response = Client().put("/notes/api/1", update_note, **self.auth_headers, content_type="application/json")
+        note = NoteSerializer(Note.objects.get(id=response.data['id'])).data
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(note["user"], update_note["user"])
+        self.assertNotEqual(note["timestamp"], update_note["timestamp"])
+        self.assertJSONEqual(str(response.content, encoding="utf8"), note)
 
     def test_fail_update_unauthorized(self):
-        pass
+        update_note = { 'text': "new text" }
+        expected_content = {'detail': 'Authentication credentials were not provided.'}
+
+        response = Client().put("/notes/api/1", update_note, content_type="application/json")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
 
     def test_delete(self):
-        response = Client().delete("/notes/api/1", **self.auth_headers)
+        response = Client().delete("/notes/api/2", **self.auth_headers)
         expected_content = {"res": "Object deleted!"}
 
         self.assertEqual(response.status_code, 200)
@@ -79,7 +117,7 @@ class NoteApiTestCase(TestCase):
 
     def test_fail_delete_unauthorized(self):
         expected_content = {'detail': 'Authentication credentials were not provided.'}
-        response = Client().delete("/notes/api/1")
+        response = Client().delete("/notes/api/2")
 
         self.assertEqual(response.status_code, 401)
         self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
