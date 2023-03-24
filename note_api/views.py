@@ -33,6 +33,7 @@ class NoteListApiView(APIView):
 def extract_note_data(request):
     data = {
         'text': request.data.get('text'),
+        'timestamp': request.data.get('timestamp'),
         'priority': request.data.get('priority'),
         'user': request.user.id
     }
