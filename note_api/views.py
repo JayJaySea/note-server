@@ -33,7 +33,6 @@ class NoteListApiView(APIView):
 def extract_note_data(request):
     data = {
         'text': request.data.get('text'),
-        'timestamp': request.data.get('timestamp'),
         'priority': request.data.get('priority'),
         'user': request.user.id
     }
@@ -55,7 +54,7 @@ class NoteDetailApiView(APIView):
 
     def get_note(self, note_id, user_id):
         try:
-            return Note.objects.get(id=note_id, user = user_id)
+            return Note.objects.get(id=note_id, user=user_id)
         except Note.DoesNotExist:
             return None
 
