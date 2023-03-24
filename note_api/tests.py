@@ -71,7 +71,15 @@ class NoteApiTestCase(TestCase):
         pass
 
     def test_delete(self):
-        pass
+        response = Client().delete("/notes/api/1", **self.auth_headers)
+        expected_content = {"res": "Object deleted!"}
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
 
     def test_fail_delete_unauthorized(self):
-        pass
+        expected_content = {'detail': 'Authentication credentials were not provided.'}
+        response = Client().delete("/notes/api/1")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertJSONEqual(str(response.content, encoding="utf8"), expected_content)
